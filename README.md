@@ -12,4 +12,7 @@ The test dataset will for all the 10k Mnist dataset.
 </ol>
 
 
-sup 21k CNN 11epoches batchsize=30 Validation Loss: 0.036003, Accuracy: 0.990100
+sup 20k CNN 11epoches batchsize=30 Validation Loss: 0.036003, Accuracy: 0.990100
+
+
+sup 1k CNN 11epoches batchsize=30 Validation Loss: 0.169187, Accuracy: 0.949600
