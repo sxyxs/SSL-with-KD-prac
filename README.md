@@ -10,3 +10,6 @@ The test dataset will for all the 10k Mnist dataset.
     <li>Use 1ksup model as Teacher, use 20k pesudo label as ground truth to train a student model</li> 
     <li>Add EMA</li>
 </ol>
+
+
+sup 21k CNN 11epoches batchsize=30 Validation Loss: 0.036003, Accuracy: 0.990100
