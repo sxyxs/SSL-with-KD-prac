@@ -9,7 +9,7 @@ from torchvision import transforms
 import matplotlib.pyplot as plt
 
 ## 配置其他超参数，如batch_size, num_workers, learning rate, 以及总的epochs
-batch_size = 30
+batch_size = 10
 num_workers = 4   # 对于Windows用户，这里应设置为0，否则会出现多线程错误
 lr = 1e-4
 epochs = 2
@@ -42,7 +42,7 @@ class MDataset(Dataset):
         label = torch.tensor(label, dtype=torch.long)
         return image, label
 
-train_df = pd.read_csv("./dataset/1klabel_train.csv")
+train_df = pd.read_csv("./dataset/19kul_train.csv")
 test_df = pd.read_csv("./dataset/mnist_test.csv")
 
 train_data = MDataset(train_df, data_transform)
@@ -78,6 +78,9 @@ class Net(nn.Module):
         x = self.fc(x)
         # x = nn.functional.normalize(x)
         return x
+def softmax(x):
+    s = torch.exp(x)
+    return s / torch.sum(s, dim=1, keepdim=True)
 
 model = torch.load("11ep_1kdata_sup_Model.pkl")
 model = model.cuda()
@@ -90,15 +93,18 @@ val_loss = 0
 gt_labels = []
 pred_labels = []
 with torch.no_grad():
-    for data, label in test_loader:
+    for data, label in train_loader:
         data, label = data.cuda(), label.cuda()
         output = model(data)
-        preds = torch.argmax(output, 1)
-        gt_labels.append(label.cpu().data.numpy())
+        # preds = torch.argmax(output, 1)
+        preds = softmax(output)
+        #print(np.sum(preds.cpu().data.numpy()))
+        # print(len(preds))
         pred_labels.append(preds.cpu().data.numpy())
-        loss = criterion(output, label)
-        val_loss += loss.item()*data.size(0)
-val_loss = val_loss/len(test_loader.dataset)
-gt_labels, pred_labels = np.concatenate(gt_labels), np.concatenate(pred_labels)
-acc = np.sum(gt_labels==pred_labels)/len(pred_labels)
-print('Epoch: {} \tValidation Loss: {:.6f}, Accuracy: {:6f}'.format(1, val_loss, acc))
+
+pred_labels =np.concatenate(pred_labels)
+print(len(pred_labels))
+
+df1 = pd.DataFrame(data=pred_labels,
+                      columns=['0','1','2','3','4','5','6','7','8','9'])
+df1.to_csv('dataset/pseudo_label.csv',index=False)

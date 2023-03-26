@@ -43,7 +43,7 @@ class MDataset(Dataset):
         return image, label
 
 train_df = pd.read_csv("./dataset/1klabel_train.csv")
-test_df = pd.read_csv("./dataset/mnist_test.csv")
+test_df = pd.read_csv("./dataset/19kul_train.csv")
 
 train_data = MDataset(train_df, data_transform)
 test_data = MDataset(test_df, data_transform)
@@ -73,7 +73,9 @@ class Net(nn.Module):
         
     def forward(self, x):
         x = self.conv(x)
+
         x = x.view(-1, 64*4*4)
+
         x = self.fc(x)
         # x = nn.functional.normalize(x)
         return x
@@ -124,5 +126,5 @@ for epoch in range(1, epochs+1):
     val(epoch)
 
 save_path = "11ep_1kdata_sup_Model.pkl"
-torch.save(model, save_path)
+#torch.save(model, save_path)
 

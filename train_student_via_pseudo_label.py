@@ -51,7 +51,7 @@ test_data = MDataset(test_df, data_transform)
 train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=True)
 test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
-
+print(test_df[0])
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
@@ -124,6 +124,4 @@ for epoch in range(1, epochs+1):
 
     val(epoch)
 
-save_path = "./11ep_20kdata_sup_Model.pkl"
-torch.save(model, save_path)
 
