@@ -9,10 +9,10 @@ from torchvision import transforms
 import matplotlib.pyplot as plt
 
 ## 配置其他超参数，如batch_size, num_workers, learning rate, 以及总的epochs
-batch_size = 25
+batch_size = 10
 num_workers = 4   # 对于Windows用户，这里应设置为0，否则会出现多线程错误
 lr = 1e-4
-epochs = 38
+epochs = 2
 
 image_size = 28
 data_transform = transforms.Compose([
@@ -42,16 +42,17 @@ class MDataset(Dataset):
         label = torch.tensor(label, dtype=torch.long)
         return image, label
 
-train_df = pd.read_csv("./dataset/part_of_mnist_train.csv")
+train_df = pd.read_csv("./dataset/19kul_train.csv")
 test_df = pd.read_csv("./dataset/mnist_test.csv")
 
 train_data = MDataset(train_df, data_transform)
 test_data = MDataset(test_df, data_transform)
 
-train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=True)
+train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=False, num_workers=num_workers, drop_last=True)
 test_loader = DataLoader(test_data, batch_size=batch_size, shuffle=False, num_workers=num_workers)
 device = torch.device("cuda:1" if torch.cuda.is_available() else "cpu")
-print(test_df[0])
+
+
 class Net(nn.Module):
     def __init__(self):
         super(Net, self).__init__()
@@ -77,51 +78,33 @@ class Net(nn.Module):
         x = self.fc(x)
         # x = nn.functional.normalize(x)
         return x
+def softmax(x):
+    s = torch.exp(x)
+    return s / torch.sum(s, dim=1, keepdim=True)
 
-model = Net()
+model = torch.load("11ep_1kdata_sup_Model.pkl")
 model = model.cuda()
+print("a")
 criterion = nn.CrossEntropyLoss()
+model.eval()
+print("a")
 
-optimizer = optim.Adam(model.parameters(), lr=0.001)
-
-def train(epoch):
-    model.train()
-    train_loss = 0
+val_loss = 0
+gt_labels = []
+pred_labels = []
+with torch.no_grad():
     for data, label in train_loader:
         data, label = data.cuda(), label.cuda()
-        optimizer.zero_grad()
         output = model(data)
-        loss = criterion(output, label)
-        loss.backward()
-        optimizer.step()
-        train_loss += loss.item()*data.size(0)
-    train_loss = train_loss/len(train_loader.dataset)
-    print('Epoch: {} \tTraining Loss: {:.6f}'.format(epoch, train_loss))
+        # preds = torch.argmax(output, 1)
+        preds = softmax(output)
+        #print(np.sum(preds.cpu().data.numpy()))
+        # print(len(preds))
+        pred_labels.append(preds.cpu().data.numpy())
 
+pred_labels =np.concatenate(pred_labels)
+print(len(pred_labels))
 
-def val(epoch):       
-    model.eval()
-    val_loss = 0
-    gt_labels = []
-    pred_labels = []
-    with torch.no_grad():
-        for data, label in test_loader:
-            data, label = data.cuda(), label.cuda()
-            output = model(data)
-            preds = torch.argmax(output, 1)
-            gt_labels.append(label.cpu().data.numpy())
-            pred_labels.append(preds.cpu().data.numpy())
-            loss = criterion(output, label)
-            val_loss += loss.item()*data.size(0)
-    val_loss = val_loss/len(test_loader.dataset)
-    gt_labels, pred_labels = np.concatenate(gt_labels), np.concatenate(pred_labels)
-    acc = np.sum(gt_labels==pred_labels)/len(pred_labels)
-    print('Epoch: {} \tValidation Loss: {:.6f}, Accuracy: {:6f}'.format(epoch, val_loss, acc))
-
-
-for epoch in range(1, epochs+1):
-    train(epoch)
-
-    val(epoch)
-
-
+df1 = pd.DataFrame(data=pred_labels,
+                      columns=['0','1','2','3','4','5','6','7','8','9'])
+df1.to_csv('dataset/pseudo_label_soft.csv',index=False)
