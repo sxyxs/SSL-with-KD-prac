@@ -12,7 +12,7 @@ import matplotlib.pyplot as plt
 batch_size = 25
 num_workers = 4   # 对于Windows用户，这里应设置为0，否则会出现多线程错误
 lr = 1e-4
-epochs = 38
+epochs = 11
 
 image_size = 28
 data_transform = transforms.Compose([
@@ -42,10 +42,18 @@ class MDataset(Dataset):
         label = torch.tensor(label, dtype=torch.long)
         return image, label
 
-train_df = pd.read_csv("./dataset/part_of_mnist_train.csv")
+train_df = pd.read_csv("./dataset/19kul_train.csv")
+train_df1 = pd.read_csv("./dataset/pseudo_label_hard.csv")
 test_df = pd.read_csv("./dataset/mnist_test.csv")
+print(train_df['label'] == train_df1['label'])
 
-train_data = MDataset(train_df, data_transform)
+train_df = train_df.drop(['label'],axis=1)
+
+# train_df = train_df.replace(train_df['label'], train_df1['label'])
+train_df2 = pd.merge(train_df1,train_df,left_index=True,right_index=True)
+print(train_df2['label'] == train_df1['label'])
+
+train_data = MDataset(train_df2, data_transform)
 test_data = MDataset(test_df, data_transform)
 
 train_loader = DataLoader(train_data, batch_size=batch_size, shuffle=True, num_workers=num_workers, drop_last=True)
@@ -121,9 +129,6 @@ def val(epoch):
 
 for epoch in range(1, epochs+1):
     train(epoch)
-
     val(epoch)
 
-save_path = "./11ep_20kdata_sup_Model.pkl"
-torch.save(model, save_path)
 
